@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Beaver Games : Repeat (Tek Sayfa / Yenilemeden)</title>
+  <style>
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#222;background:#fff}
+    a{color:inherit;text-decoration:none}
+    h1{margin:20px 0 2em;text-align:center}
+    #difficulty{position:fixed;top:12px;right:12px;z-index:10}
+    #levelSelect{position:fixed;top:12px;right:150px;z-index:10}
+    #controls{margin:0 auto}
+    #controls button{
+      border:1px solid #fff;border-radius:8px;color:#fff;font-size:large;
+      height:56px;margin:6px;outline:none;width:56px;cursor:pointer;
+      box-shadow:0 10px 24px rgba(0,0,0,.12);
+      display:flex;align-items:center;justify-content:center;
+    }
+    #controls button:hover{filter:brightness(1.05)}
+    #controls.disabled button{opacity:.55;cursor:not-allowed}
+    #controls button.highlight{opacity:.7;transform:translateY(1px)}
+    #b1{background:#D02E2B}
+    #b2{background:#2E5FFF}
+    #b3{background:#F0A609}
+    #b4{background:#178F47}
+
+    .arrow{
+      width:22px;height:22px;display:block;
+      filter: drop-shadow(0 2px 2px rgba(0,0,0,.25));
+    }
+    #start{
+      border:1px solid #ccc;border-radius:12px;font-size:large;
+      margin:20px auto;padding:16px 20px;width:160px;display:block;
+      background:#fff;cursor:pointer;
+      box-shadow:0 10px 28px rgba(0,0,0,.10);
+    }
+    #start:hover{border:1px solid #000}
+
+    #startDiv{
+      left:0;top:0;position:fixed;width:100%;height:100%;
+      display:flex;align-items:center;justify-content:center;
+      background:rgba(10,12,24,.25);backdrop-filter:blur(6px);
+      z-index:9;
+    }
+    #startCard{
+      width:min(520px,92vw);
+      background:#fff;border:1px solid rgba(255,255,255,.7);
+      border-radius:22px;padding:18px 18px 14px;
+      box-shadow:0 22px 60px rgba(0,0,0,.18);
+      text-align:center;
+    }
+    #startCard h2{margin:0 0 8px;font-size:18px}
+    #startCard p{margin:0 0 12px;color:#555;font-size:13px;line-height:1.45}
+    .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+    .ghost{
+      border:0;border-radius:12px;padding:12px 14px;font-weight:700;cursor:pointer;
+      background:#f3f4f8;color:#222;box-shadow:0 8px 18px rgba(0,0,0,.08);
+    }
+    .primary{
+      border:0;border-radius:12px;padding:12px 14px;font-weight:800;cursor:pointer;
+      background:#6c5dd3;color:#64d916;box-shadow:0 10px 22px rgba(108,93,211,.28);
+    }
+
+    #timeline{margin-top:4em}
+    circle,line{stroke:#444}
+    circle.notDone{fill:#fff}
+    circle.now{fill:#ccc}
+    circle.done{fill:#444}
+    #levelDiv{margin:10px 5%;display:flex;gap:10px;align-items:center;justify-content:space-between}
+    #instructions{margin:18px auto 40px;font-size:12px;font-style:italic;text-align:center;color:#555;max-width:800px;padding:0 16px}
+
+    body.shake{
+      animation:shake .82s cubic-bezier(.36,.07,.19,.97) both;
+      transform:translate(0,0);
+    }
+    @keyframes shake{
+      10%,90%{transform:translate(-1px,0)}
+      20%,80%{transform:translate(2px,-2px)}
+      30%,50%,70%{transform:translate(-4px,0)}
+      40%,60%{transform:translate(4px,2px)}
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Zorluk: sayfa yenilemeden uygulanır -->
+  <select id="difficulty" title="Difficulty">
+    <option value="0">Easy</option>
+    <option value="1">Normal</option>
+    <option value="2">Hard</option>
+  </select>
+
+  <!-- Level seçimi: sayfa yenilemeden anında geçiş -->
+  <select id="levelSelect" title="Level">
+    <option value="-1">Level Seç…</option>
+  </select>
+
+  <h1><a href="#">Beaver Games</a> : Repeat</h1>
+
+  <div id="startDiv">
+    <div id="startCard">
+      <h2>🎵 Repeat</h2>
+      <p>Bilgisayarın çaldığı deseni aynı sırayla tekrar et.<br/>Ok tuşları veya renkli butonları kullan.</p>
+      <div class="row">
+        <button id="start" class="primary">Start</button>
+        <button id="closeOverlay" class="ghost" type="button">Kapat</button>
+      </div>
+      <p style="margin:10px 0 0;color:#777;font-size:12px;">Not: Ses için tarayıcı izin verebilir.</p>
+    </div>
+  </div>
+
+  <table id="controls" class="disabled">
+    <tr>
+      <td></td>
+      <td>
+        <button id="b1" aria-label="Up">
+          <svg class="arrow" viewBox="0 0 24 24" fill="white" aria-hidden="true">
+            <path d="M12 4l7 8h-4v8H9v-8H5l7-8z"/>
+          </svg>
+        </button>
+      </td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>
+        <button id="b2" aria-label="Left">
+          <svg class="arrow" viewBox="0 0 24 24" fill="white" aria-hidden="true">
+            <path d="M4 12l8-7v4h8v6h-8v4l-8-7z"/>
+          </svg>
+        </button>
+      </td>
+      <td>
+        <button id="b3" aria-label="Down">
+          <svg class="arrow" viewBox="0 0 24 24" fill="white" aria-hidden="true">
+            <path d="M12 20l-7-8h4V4h6v8h4l-7 8z"/>
+          </svg>
+        </button>
+      </td>
+      <td>
+        <button id="b4" aria-label="Right">
+          <svg class="arrow" viewBox="0 0 24 24" fill="white" aria-hidden="true">
+            <path d="M20 12l-8 7v-4H4V9h8V5l8 7z"/>
+          </svg>
+        </button>
+      </td>
+    </tr>
+  </table>
+
+  <svg id="timeline" height="26" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <line id="tline" x1="5%" y1="13" x2="95%" y2="13"></line>
+    <!-- circles injected -->
+  </svg>
+
+  <div id="levelDiv">
+    <div>Level: <b id="level">0</b> / <b id="levelMax">-</b></div>
+    <div>Seçili Zorluk: <b id="diffLabel">Easy</b></div>
+  </div>
+
+  <p id="instructions">
+    Ok tuşları: ↑ (kırmızı), ← (mavi), ↓ (sarı), → (yeşil).<br/>
+    Seçim değişince (Difficulty / Level) sayfa yenilenmeden aynı sayfada yeniden başlar.
+  </p>
+
+<script>
+'use strict';
+
+/* -------------------- Ayarlar -------------------- */
+const DIFFS = [
+  { name: 'Easy',   maxLevel: 8,  flashMs: 520, gapMs: 180, betweenMs: 420 },
+  { name: 'Normal', maxLevel: 12, flashMs: 420, gapMs: 160, betweenMs: 360 },
+  { name: 'Hard',   maxLevel: 18, flashMs: 320, gapMs: 130, betweenMs: 280 },
+];
+
+// Buton frekansları: C4, G3, E3, C3 (yaklaşık)
+const TONES = {
+  b1: 261.63, // C4
+  b2: 196.00, // G3
+  b3: 164.81, // E3
+  b4: 130.81, // C3
+};
+
+// UI
+const elDifficulty = document.getElementById('difficulty');
+const elLevelSelect = document.getElementById('levelSelect');
+const elStartOverlay = document.getElementById('startDiv');
+const elStartBtn = document.getElementById('start');
+const elCloseOverlay = document.getElementById('closeOverlay');
+const elControls = document.getElementById('controls');
+const elLevel = document.getElementById('level');
+const elLevelMax = document.getElementById('levelMax');
+const elDiffLabel = document.getElementById('diffLabel');
+const svgTimeline = document.getElementById('timeline');
+
+// Buttons
+const buttons = ['b1','b2','b3','b4'].map(id => document.getElementById(id));
+
+/* -------------------- Ses (tek dosya) -------------------- */
+let audioCtx = null;
+function beep(freq, ms=120, type='sine', gain=0.08) {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = type;
+    o.frequency.value = freq;
+    g.gain.value = gain;
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + ms/1000);
+    o.stop(audioCtx.currentTime + ms/1000);
+  } catch(e) {}
+}
+function crashSound() { beep(110, 220, 'square', 0.10); beep(90, 240, 'sawtooth', 0.06); }
+function winSound()   { beep(660, 120); setTimeout(()=>beep(880,120), 140); }
+
+/* -------------------- Oyun Durumu -------------------- */
+let diffIndex = 0;
+let sequence = [];       // computer pattern (array of button indices 0..3)
+let level = 0;           // current level (how many steps to play)
+let accepting = false;   // user input allowed?
+let userPos = 0;         // where user is in sequence
+let timers = [];         // timeouts to clear
+
+function clearTimers() { timers.forEach(t=>clearTimeout(t)); timers = []; }
+
+/* -------------------- Storage (yenilemeden geçiş için) -------------------- */
+function saveDifficulty(d) {
+  document.cookie = 'difficulty=' + d + '; path=/; max-age=' + (60*60*24*365);
+  try { localStorage.setItem('repeat_difficulty', String(d)); } catch(e) {}
+}
+function loadDifficulty() {
+  const m = document.cookie.match(/(?:^|;\s*)difficulty=([012])/);
+  if (m) return Number(m[1]);
+  try {
+    const v = localStorage.getItem('repeat_difficulty');
+    if (v === '0' || v === '1' || v === '2') return Number(v);
+  } catch(e) {}
+  return 0;
+}
+
+/* -------------------- Timeline -------------------- */
+function buildTimeline(maxLevel) {
+  // remove old circles
+  [...svgTimeline.querySelectorAll('circle')].forEach(c => c.remove());
+
+  // Create circles 1..maxLevel
+  for (let i = 1; i <= maxLevel; i++) {
+    const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    c.setAttribute('cy', '13');
+    c.setAttribute('r', '6');
+    c.dataset.level = String(i);
+    svgTimeline.appendChild(c);
+  }
+  layoutTimeline();
+  updateTimeline();
+}
+
+function layoutTimeline() {
+  const circles = [...svgTimeline.querySelectorAll('circle')];
+  const rect = svgTimeline.getBoundingClientRect();
+  const left = rect.width * 0.05;
+  const right = rect.width * 0.95;
+  const span = right - left;
+  const maxLevel = DIFFS[diffIndex].maxLevel;
+
+  circles.forEach((c, idx) => {
+    const i = idx + 1;
+    const x = left + (span * (i / (maxLevel + 1)));
+    c.setAttribute('cx', String(x));
+  });
+}
+
+function updateTimeline() {
+  const circles = [...svgTimeline.querySelectorAll('circle')];
+  circles.forEach(c => {
+    const i = Number(c.dataset.level);
+    c.classList.remove('done','now','notDone');
+    if (i < level) c.classList.add('done');
+    else if (i === level) c.classList.add('now');
+    else c.classList.add('notDone');
+  });
+}
+
+/* -------------------- UI helpers -------------------- */
+function setControlsEnabled(on) {
+  accepting = on;
+  elControls.classList.toggle('disabled', !on);
+}
+
+function flashButton(idx, ms) {
+  const btn = buttons[idx];
+  btn.classList.add('highlight');
+  const id = btn.id;
+  beep(TONES[id] || 440, Math.max(80, ms-60));
+  timers.push(setTimeout(() => btn.classList.remove('highlight'), ms));
+}
+
+function updateHUD() {
+  elLevel.textContent = String(level);
+  elLevelMax.textContent = String(DIFFS[diffIndex].maxLevel);
+  elDiffLabel.textContent = DIFFS[diffIndex].name;
+  updateTimeline();
+}
+
+/* -------------------- Oyun Akışı -------------------- */
+function resetGame() {
+  clearTimers();
+  document.body.className = '';
+  sequence = [];
+  level = 0;
+  userPos = 0;
+  setControlsEnabled(false);
+  updateHUD();
+}
+
+function startGameFromLevel(startLevel) {
+  // startLevel: 1..maxLevel
+  resetGame();
+
+  const maxLevel = DIFFS[diffIndex].maxLevel;
+
+  // sequence'ı en az startLevel uzunluğunda hazırla
+  while (sequence.length < Math.max(1, startLevel)) {
+    sequence.push(Math.floor(Math.random() * 4));
+  }
+  level = Math.min(Math.max(1, startLevel), maxLevel);
+
+  elStartOverlay.style.display = 'none';
+  updateHUD();
+  playLevel();
+}
+
+function nextLevel() {
+  const maxLevel = DIFFS[diffIndex].maxLevel;
+  if (level >= maxLevel) {
+    // win
+    winSound();
+    setControlsEnabled(false);
+    timers.push(setTimeout(() => {
+      elStartOverlay.style.display = 'flex';
+    }, 450));
+    return;
+  }
+  level++;
+  if (sequence.length < level) sequence.push(Math.floor(Math.random() * 4));
+  updateHUD();
+  timers.push(setTimeout(playLevel, DIFFS[diffIndex].betweenMs));
+}
+
+function playLevel() {
+  clearTimers();
+  setControlsEnabled(false);
+  userPos = 0;
+  updateHUD();
+
+  const { flashMs, gapMs } = DIFFS[diffIndex];
+  let t = 120;
+
+  for (let i = 0; i < level; i++) {
+    const idx = sequence[i];
+    timers.push(setTimeout(() => flashButton(idx, flashMs), t));
+    t += flashMs + gapMs;
+  }
+  timers.push(setTimeout(() => {
+    setControlsEnabled(true);
+  }, t));
+}
+
+function fail() {
+  clearTimers();
+  setControlsEnabled(false);
+  crashSound();
+  document.body.className = 'shake';
+  timers.push(setTimeout(() => {
+    document.body.className = '';
+    elStartOverlay.style.display = 'flex';
+  }, 950));
+}
+
+/* -------------------- Input -------------------- */
+function press(idx) {
+  if (!accepting) return;
+
+  flashButton(idx, Math.max(120, DIFFS[diffIndex].flashMs - 140));
+
+  if (sequence[userPos] !== idx) {
+    fail();
+    return;
+  }
+  userPos++;
+  if (userPos >= level) {
+    // success
+    setControlsEnabled(false);
+    timers.push(setTimeout(nextLevel, 260));
+  }
+}
+
+function onKeyDown(e) {
+  // ↑ red(b1), ← blue(b2), ↓ yellow(b3), → green(b4)
+  if (e.key === 'ArrowUp')    { press(0); e.preventDefault(); }
+  if (e.key === 'ArrowLeft')  { press(1); e.preventDefault(); }
+  if (e.key === 'ArrowDown')  { press(2); e.preventDefault(); }
+  if (e.key === 'ArrowRight') { press(3); e.preventDefault(); }
+
+  // Enter/Space start from overlay
+  if ((e.key === 'Enter' || e.key === ' ') && elStartOverlay.style.display !== 'none') {
+    startGameFromLevel(1);
+    e.preventDefault();
+  }
+}
+
+buttons.forEach((btn, idx) => {
+  btn.addEventListener('click', () => press(idx));
+});
+
+/* -------------------- Difficulty + Level (NO refresh) -------------------- */
+function rebuildLevelSelect() {
+  const maxLevel = DIFFS[diffIndex].maxLevel;
+  elLevelSelect.innerHTML = '';
+  const first = document.createElement('option');
+  first.value = '-1';
+  first.textContent = 'Level Seç…';
+  elLevelSelect.appendChild(first);
+
+  for (let i = 1; i <= maxLevel; i++) {
+    const opt = document.createElement('option');
+    opt.value = String(i);
+    opt.textContent = 'Level ' + i;
+    elLevelSelect.appendChild(opt);
+  }
+  elLevelSelect.value = '-1';
+}
+
+function applyDifficulty(newIndex) {
+  diffIndex = newIndex;
+  saveDifficulty(diffIndex);
+
+  rebuildLevelSelect();
+  buildTimeline(DIFFS[diffIndex].maxLevel);
+
+  // yenilemeden: oyunu resetle ve overlay'i göster
+  resetGame();
+  elStartOverlay.style.display = 'flex';
+}
+
+elDifficulty.addEventListener('change', function() {
+  applyDifficulty(Number(this.value) || 0);
+});
+
+elLevelSelect.addEventListener('change', function() {
+  const v = Number(this.value);
+  if (!Number.isFinite(v) || v < 1) return;
+  // level seçilince yenilemeden o levele başla
+  startGameFromLevel(v);
+});
+
+/* -------------------- Overlay buttons -------------------- */
+elStartBtn.addEventListener('click', () => startGameFromLevel(1));
+elCloseOverlay.addEventListener('click', () => { elStartOverlay.style.display = 'none'; });
+
+/* -------------------- Boot -------------------- */
+window.addEventListener('resize', layoutTimeline);
+window.addEventListener('keydown', onKeyDown);
+window.addEventListener('load', () => {
+  const d = loadDifficulty();
+  elDifficulty.value = String(d);
+  applyDifficulty(d);
+});
+</script>
+</body>
+</html>
